@@ -1,27 +1,39 @@
-from flask import Flask,request
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from recom import recommend
-import json
+import uvicorn
 
-app= Flask(__name__)
-CORS(app)
+app = FastAPI(title="SIH_ecom Recommender API")
 
-@app.route("/",methods = ["GET"])
-def index():
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def index(q: str = Query(None)):
     try:
-        q=request.args.get('q')
-        data=recommend(q)
+        if not q:
+            return {
+                "message": "Query parameter 'q' is required",
+                "success": False
+            }
+            
+        data = recommend(q)
         
-        return json.dumps({
-            'data':data,
-            'success':True
-        },indent=4)
-    except:
         return {
-            'message':'Error',
-            'success':False
+            "data": data,
+            "success": True
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={
+            "message": f"Error: {str(e)}",
+            "success": False
+        })
 
-    
 if __name__ == "__main__":
-    app.run(debug=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
