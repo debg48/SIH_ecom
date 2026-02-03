@@ -1,0 +1,12 @@
+app:
+  title: "SIH_ecom Recommender API"
+  host: "0.0.0.0"
+  port: 5000
+  reload: true
+
+model:
+  name: "sentence-transformers/all-mpnet-base-v2"
+
+data:
+  embeddings: "data/emb.pkl"
+  products: "data/prod.pkl"

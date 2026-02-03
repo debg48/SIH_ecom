@@ -10,12 +10,30 @@ An AI-powered product recommendation engine developed for the **Smart India Hack
 
 ## 🚀 Overview
 
-Traditional e-commerce search relies on keyword matching. Our recommendation system goes beyond keywords by understanding the *intent* and *context* of product descriptions. Using the `all-mpnet-base-v2` transformer model, it maps products into a high-dimensional vector space where "similar" products are physically closer to each other.
+Traditional e-commerce search relies on keyword matching. Our recommendation system goes beyond keywords by understanding intent and context. Using the `all-mpnet-base-v2` transformer model, it maps products into a high-dimensional vector space.
 
 ### Key Features
-- **Semantic Search**: Understands synonyms and context (e.g., "running shoes" vs "athletic footwear").
-- **Real-time Inference**: Quick recommendation generation using pre-computed embeddings.
-- **REST API**: Simple JSON interface for easy integration with frontend applications.
+- **Semantic Search**: Understands synonyms and context.
+- **REST API**: Clean FastAPI interface with industry-standard structuring.
+- **Configuration Driven**: All paths and settings managed via `config.yaml`.
+
+---
+
+## 📁 Project Structure
+
+```
+SIH_ecom/
+├── app/
+│   └── main.py      # Entry point: API routes and application logic
+├── util/
+│   └── recom.py     # Recommender class handling ML inference
+├── data/
+│   ├── emb.pkl      # Pre-computed product embeddings
+│   └── prod.pkl     # Product name mappings
+├── config.yaml      # Centralized configuration file
+├── requirements.txt # Project dependencies
+└── README.md
+```
 
 ---
 
@@ -24,14 +42,7 @@ Traditional e-commerce search relies on keyword matching. Our recommendation sys
 - **Backend**: [FastAPI](https://fastapi.tiangolo.com/)
 - **NLP Model**: [Sentence-Transformers](https://www.sbert.net/) (`all-mpnet-base-v2`)
 - **Data Handling**: [Pickle](https://docs.python.org/3/library/pickle.html) for embedding persistence.
-- **Similarity Metric**: Cosine Similarity.
-
-### Why FastAPI?
-We migrated from Flask to FastAPI to improve the production readiness of the system:
-- **Asynchronous Execution**: Better handling of concurrent requests during ML inference.
-- **Type Safety & Validation**: Automatic request validation using Pydantic models.
-- **Auto-Generated Docs**: Interactive OpenAPI (Swagger) documentation available out-of-the-box.
-- **Performance**: Built on Starlette and Uvicorn, offering significantly lower overhead.
+- **Configuration**: YAML.
 
 ---
 
@@ -56,9 +67,9 @@ pip install -r requirements.txt
 
 ### 4. Run the application
 ```bash
-python app.py
+python app/main.py
 # OR
-uvicorn app:app --host 0.0.0.0 --port 5000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
 ```
 
 ---
@@ -68,10 +79,12 @@ uvicorn app:app --host 0.0.0.0 --port 5000 --reload
 The system exposes a single GET endpoint:
 
 **Endpoint**: `/`  
-**Query Parameter**: `q` (The product name or description)
+**Query Parameter**: `product_name` (Alias: `q`)
 
 **Example Request**:
 ```bash
+curl "http://localhost:5000/?product_name=men's formal shirt"
+# OR
 curl "http://localhost:5000/?q=men's formal shirt"
 ```
 
@@ -89,31 +102,21 @@ curl "http://localhost:5000/?q=men's formal shirt"
 
 ---
 
-## � Changelog
+## 📝 Changelog
 
-### v2.0.0 - Modernization Update
-- **Backend Migration**: Successfully migrated from Flask to **FastAPI**.
-- **Performance**: Improved concurrency and reduced startup latency.
-- **Documentation**: Added automatic Swagger UI and Redoc support.
-- **CORS**: Implemented robust CORSMiddleware for frontend-backend separation.
+### v2.1.0 - Architecture Refinement
+- **Backend Migration**: Successfully migrated from Flask to **FastAPI** for better performance and type safety.
+- **Consolidated Structure**: Simplified into `app/` and `util/` for clarity.
+- **Configuration System**: Introduced `config.yaml` for environment-agnostic setup.
+- **API Improvements**: Renamed query parameter to `product_name` (retaining `q` as an alias).
+- **Data Isolation**: Moved all persistence files to the `data/` directory.
 
 ---
 
 ## 🗺 Future Roadmap
 
-We are planning to modernize the architecture to improve scalability and performance:
-
-### 🗄️ 1. Vector Database Integration
-Currently, embeddings are stored in `.pkl` files and loaded into memory. We plan to migrate to a dedicated **Vector Database** (e.g., **ChromaDB**, **Qdrant**, or **Pinecone**):
-- **Efficient Retrieval**: Fast k-NN (k-Nearest Neighbors) search without loading everything into RAM.
-- **Scalability**: Handle millions of products without performance degradation.
-- **Dynamic Updates**: Add or remove products without retraining or reloading the entire dataset.
-
-### 🏃 2. Switch to Lightweight Model
-We plan to switch from `all-mpnet-base-v2` to a more lightweight model like `all-MiniLM-L6-v2` or the latest efficient Small Language Models (SLMs):
-- **Faster Inference**: Reduced latency for real-time recommendations.
-- **Lower Resource Usage**: Smaller memory footprint and faster loading times.
-- **Edge Compatibility**: Easier to deploy on smaller instances or edge devices.
+- **Vector Database**: Migrate to ChromaDB/Qdrant for better scalability.
+- **Lightweight Models**: Integration with `all-MiniLM-L6-v2` for faster edge inference.
 
 ---
 
@@ -123,6 +126,4 @@ Developed during **Smart India Hackathon 2022** by **Debgandhar Ghosh**.
 ---
 
 ## 📞 Contact
-Feel free to reach out for consultancy or professional inquiries. Paid customization and specialized integrations are also available.
-
 📧 **Email**: [debgandhar4000@gmail.com](mailto:debgandhar4000@gmail.com)
