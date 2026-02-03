@@ -10,7 +10,7 @@ An AI-powered product recommendation engine developed for the **Smart India Hack
 
 ## 🚀 Overview
 
-Traditional e-commerce search relies on keyword matching. **SIH_ecom** goes beyond keywords by understanding the *intent* and *context* of product descriptions. Using the `all-mpnet-base-v2` transformer model, it maps products into a high-dimensional vector space where "similar" products are physically closer to each other.
+Traditional e-commerce search relies on keyword matching. Our recommendation system goes beyond keywords by understanding the *intent* and *context* of product descriptions. Using the `all-mpnet-base-v2` transformer model, it maps products into a high-dimensional vector space where "similar" products are physically closer to each other.
 
 ### Key Features
 - **Semantic Search**: Understands synonyms and context (e.g., "running shoes" vs "athletic footwear").
@@ -39,7 +39,7 @@ We migrated from Flask to FastAPI to improve the production readiness of the sys
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/SIH_ecom.git
+git clone https://github.com/debg48/SIH_ecom.git
 cd SIH_ecom
 ```
 
