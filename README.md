@@ -102,6 +102,20 @@ curl "http://localhost:5000/?q=men's formal shirt"
 
 ---
 
+## 📊 Data Generation
+
+The product data used in this project was synthetically generated using **LLMs** to ensure realistic and diverse descriptions of Indian indigenous crafts.
+
+- **Model**: `microsoft/phi-3-mini-4k-instruct` (via Hugging Face)
+- **Categories**: Handloom Textiles, Wood Craft, and Terracotta Craft.
+- **Quantity**: 300 unique product items.
+- **Process**: A custom prompt-engineering script was used to generate structured JSON data, defining product IDs, names, and natural language descriptions based on regional techniques and materials.
+
+Check out the generation script here:
+[![Google Colab](https://img.shields.io/badge/Colab-Notebook-F9AB00?style=flat&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/18eI0KWHEa5YUxJXlpZNbXwtt-DzmJZqO?usp=sharing)
+
+---
+
 ## 📝 Changelog
 
 ### v2.1.0 - Architecture Refinement
