@@ -1,22 +1,65 @@
-from sentence_transformers import SentenceTransformer, util
-import pickle
-import os
+import logging
+from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient
+from qdrant_client.http.exceptions import UnexpectedResponse
+
+logger = logging.getLogger(__name__)
+
 
 class Recommender:
-    def __init__(self, model_name, emb_path, prod_path):
-        if not os.path.exists(emb_path):
-            raise FileNotFoundError(f"Embeddings file not found: {emb_path}")
-        if not os.path.exists(prod_path):
-            raise FileNotFoundError(f"Products file not found: {prod_path}")
-            
-        self.model = SentenceTransformer(model_name)
-        self.emb = pickle.load(open(emb_path, 'rb'))
-        self.prod_name = pickle.load(open(prod_path, 'rb'))
+    def __init__(self, model_name, qdrant_url, qdrant_api_key, collection_name):
+        if not model_name:
+            raise ValueError("model_name cannot be empty.")
+        if not qdrant_url:
+            raise ValueError("qdrant_url cannot be empty. Check your .env file.")
 
-    def recommend(self, name):
-        q_emb = self.model.encode(name)
-        scores = util.cos_sim(q_emb, self.emb)[0].cpu().tolist()
-        doc_score_pairs = list(zip(self.prod_name, scores))
-        doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
-        # Return top 5 matches (excluding the exact match if it's the first one, though logic used 1:6)
-        return doc_score_pairs[1:6]
+        try:
+            self.model = SentenceTransformer(model_name)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load SentenceTransformer model '{model_name}': {e}")
+
+        try:
+            self.client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key, timeout=10)
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to Qdrant at '{qdrant_url}': {e}")
+
+        self.collection_name = collection_name
+
+        # Verify collection exists
+        try:
+            if not self.client.collection_exists(self.collection_name):
+                logger.warning(f"Collection '{self.collection_name}' does not exist in Qdrant. "
+                               "Run the migration script first.")
+        except Exception as e:
+            logger.warning(f"Could not verify collection existence: {e}")
+
+    def recommend(self, query):
+        """
+        Generate recommendations for the given query string.
+        Returns a list of (product_name, score) tuples.
+        """
+        if not query or not query.strip():
+            return []
+
+        try:
+            query_vector = self.model.encode(query).tolist()
+        except Exception as e:
+            raise RuntimeError(f"Failed to encode query '{query}': {e}")
+
+        try:
+            search_result = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=query_vector,
+                limit=5
+            )
+        except UnexpectedResponse as e:
+            raise RuntimeError(f"Qdrant search failed (collection may not exist): {e}")
+        except Exception as e:
+            raise ConnectionError(f"Failed to communicate with Qdrant: {e}")
+
+        results = []
+        for point in search_result:
+            product_name = point.payload.get('product_name', 'Unknown Product')
+            results.append((product_name, round(point.score, 4)))
+
+        return results

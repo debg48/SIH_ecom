@@ -5,8 +5,13 @@ app:
   reload: true
 
 model:
-  name: "sentence-transformers/all-mpnet-base-v2"
+  name: "sentence-transformers/all-MiniLM-L6-v2"
 
 data:
   embeddings: "data/emb.pkl"
   products: "data/prod.pkl"
+
+qdrant:
+  url: "${QDRANT_URL}"
+  api_key: "${QDRANT_API_KEY}"
+  
