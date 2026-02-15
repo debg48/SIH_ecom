@@ -2,20 +2,23 @@
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.95.1-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Stencil](https://img.shields.io/badge/Sentence--Transformers-all--mpnet--base--v2-blue)](https://www.sbert.net/)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-DC244C?style=flat&logo=data:image/png;base64,&logoColor=white)](https://qdrant.tech/)
+[![Stencil](https://img.shields.io/badge/Sentence--Transformers-all--MiniLM--L6--v2-blue)](https://www.sbert.net/)
 
-An AI-powered product recommendation engine developed for the **Smart India Hackathon 2022**. This system leverages state-of-the-art NLP models to provide semantically relevant product suggestions based on user queries and product descriptions.
+An AI-powered product recommendation engine developed for the **Smart India Hackathon 2022**. This system leverages state-of-the-art NLP models and a vector database to provide semantically relevant product suggestions based on user queries and product descriptions.
 
 ---
 
 ## 🚀 Overview
 
-Traditional e-commerce search relies on keyword matching. Our recommendation system goes beyond keywords by understanding intent and context. Using the `all-mpnet-base-v2` transformer model, it maps products into a high-dimensional vector space.
+Traditional e-commerce search relies on keyword matching. Our recommendation system goes beyond keywords by understanding intent and context. Using the `all-MiniLM-L6-v2` transformer model and **Qdrant** as a vector database, it maps products into a high-dimensional vector space for fast, scalable semantic search.
 
 ### Key Features
 - **Semantic Search**: Understands synonyms and context.
-- **REST API**: Clean FastAPI interface with industry-standard structuring.
-- **Configuration Driven**: All paths and settings managed via `config.yaml`.
+- **Vector Database**: Powered by Qdrant for scalable, production-grade similarity search.
+- **REST API**: Clean FastAPI interface with health checks and structured error responses.
+- **Configuration Driven**: All paths and settings managed via `config.yaml` with environment variable support.
+- **Data Pipeline**: Scripts for embedding generation and data migration with multiple modes.
 
 ---
 
@@ -24,14 +27,19 @@ Traditional e-commerce search relies on keyword matching. Our recommendation sys
 ```
 SIH_ecom/
 ├── app/
-│   └── main.py      # Entry point: API routes and application logic
+│   ├── main.py        # Entry point: API routes, health check, CORS
+│   └── loader.py      # Configuration loader with env var expansion
 ├── util/
-│   └── recom.py     # Recommender class handling ML inference
+│   └── recom.py       # Recommender class (Qdrant-backed vector search)
+├── scripts/
+│   ├── generate_embeddings.py  # Generate embeddings from CSV → pickle
+│   └── migrate.py              # Upload embeddings to Qdrant (replace/drop/append)
 ├── data/
-│   ├── emb.pkl      # Pre-computed product embeddings
-│   └── prod.pkl     # Product name mappings
-├── config.yaml      # Centralized configuration file
-├── requirements.txt # Project dependencies
+│   ├── products.csv   # Source product data
+│   └── emb.pkl        # Pre-computed product embeddings
+├── config.yaml        # Centralized configuration file
+├── .env               # Environment variables (Qdrant credentials)
+├── requirements.txt   # Project dependencies
 └── README.md
 ```
 
@@ -40,9 +48,9 @@ SIH_ecom/
 ## 🛠 Tech Stack
 
 - **Backend**: [FastAPI](https://fastapi.tiangolo.com/)
-- **NLP Model**: [Sentence-Transformers](https://www.sbert.net/) (`all-mpnet-base-v2`)
-- **Data Handling**: [Pickle](https://docs.python.org/3/library/pickle.html) for embedding persistence.
-- **Configuration**: YAML.
+- **NLP Model**: [Sentence-Transformers](https://www.sbert.net/) (`all-MiniLM-L6-v2`)
+- **Vector Database**: [Qdrant Cloud](https://qdrant.tech/) for embedding storage and search
+- **Configuration**: YAML with `${ENV_VAR}` expansion via `python-dotenv`
 
 ---
 
@@ -65,7 +73,25 @@ source env/bin/activate  # On Windows: env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Run the application
+### 4. Configure environment
+Create a `.env` file in the project root:
+```env
+QDRANT_URL=https://your-cluster.cloud.qdrant.io:6333
+QDRANT_API_KEY=your-api-key-here
+```
+
+### 5. Generate embeddings & migrate data
+```bash
+# Generate embeddings from products.csv
+python scripts/generate_embeddings.py
+
+# Upload to Qdrant (choose a mode)
+python scripts/migrate.py --mode replace   # Upsert by ID
+python scripts/migrate.py --mode drop      # Drop & recreate collection
+python scripts/migrate.py --mode append    # Append after existing data
+```
+
+### 6. Run the application
 ```bash
 python app/main.py
 # OR
@@ -76,16 +102,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
 
 ## 🔌 API Usage
 
-The system exposes a single GET endpoint:
+### Recommendation Endpoint
 
-**Endpoint**: `/`  
+**Endpoint**: `GET /`  
 **Query Parameter**: `product_name` (Alias: `q`)
 
 **Example Request**:
 ```bash
 curl "http://localhost:5000/?product_name=men's formal shirt"
-# OR
-curl "http://localhost:5000/?q=men's formal shirt"
 ```
 
 **Example Response**:
@@ -97,6 +121,17 @@ curl "http://localhost:5000/?q=men's formal shirt"
         ["Product C", 0.85]
     ],
     "success": true
+}
+```
+
+### Health Check
+
+**Endpoint**: `GET /health`
+
+```json
+{
+    "status": "healthy",
+    "recommender_ready": true
 }
 ```
 
@@ -116,7 +151,27 @@ Check out the generation script here:
 
 ---
 
-## 📝 Changelog
+## � Future Roadmap
+
+- **Authentication & Rate Limiting**: Add API key auth and request throttling for production.
+- **Multi-Modal Search**: Support image-based queries alongside text.
+- **User Behavior Tracking**: Integrate click-through analytics for feedback-driven re-ranking.
+- **A/B Testing Framework**: Compare recommendation strategies in real-time.
+- **Containerization**: Dockerize the application with `docker-compose` for Qdrant + API deployment.
+- **CI/CD Pipeline**: Automated testing and deployment via GitHub Actions.
+
+---
+
+## �📝 Changelog
+
+### v2.2.0 - Qdrant Integration & Robustness
+- **Vector Database**: Migrated from local pickle-based search to **Qdrant Cloud** for scalable vector storage.
+- **Model Upgrade**: Switched to `all-MiniLM-L6-v2` (~5x faster inference, 384-dim vectors).
+- **Secure Config Loader**: New `app/loader.py` with `${ENV_VAR}` expansion from `.env` files.
+- **Data Pipeline**: Added `scripts/generate_embeddings.py` and `scripts/migrate.py` with 3 migration modes (Replace, Drop, Append).
+- **Error Handling**: Comprehensive try-catch blocks, input validation, and logging across all modules.
+- **Health Endpoint**: New `GET /health` for monitoring service readiness.
+- **Graceful Degradation**: App starts even if Qdrant is unavailable, returning `503` on recommendation requests.
 
 ### v2.1.0 - Architecture Refinement
 - **Backend Migration**: Successfully migrated from Flask to **FastAPI** for better performance and type safety.
@@ -124,13 +179,6 @@ Check out the generation script here:
 - **Configuration System**: Introduced `config.yaml` for environment-agnostic setup.
 - **API Improvements**: Renamed query parameter to `product_name` (retaining `q` as an alias).
 - **Data Isolation**: Moved all persistence files to the `data/` directory.
-
----
-
-## 🗺 Future Roadmap
-
-- **Vector Database**: Migrate to ChromaDB/Qdrant for better scalability.
-- **Lightweight Models**: Integration with `all-MiniLM-L6-v2` for faster edge inference.
 
 ---
 
