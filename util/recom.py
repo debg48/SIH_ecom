@@ -47,9 +47,9 @@ class Recommender:
             raise RuntimeError(f"Failed to encode query '{query}': {e}")
 
         try:
-            search_result = self.client.search(
+            search_result = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_vector,
+                query=query_vector,
                 limit=5
             )
         except UnexpectedResponse as e:
@@ -58,7 +58,7 @@ class Recommender:
             raise ConnectionError(f"Failed to communicate with Qdrant: {e}")
 
         results = []
-        for point in search_result:
+        for point in search_result.points:
             product_name = point.payload.get('product_name', 'Unknown Product')
             results.append((product_name, round(point.score, 4)))
 
